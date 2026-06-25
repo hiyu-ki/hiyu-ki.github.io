@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>노트</title>
+<link rel="stylesheet" as="style" crossorigin
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root{
+    --paper:#f6f7f9;
+    --card:#ffffff;
+    --ink:#20262e;
+    --muted:#6b7480;
+    --faint:#9aa2ac;
+    --line:#e4e7ec;
+    --accent:#2f5d8a;       /* 만년필 잉크색 */
+    --accent-soft:#eaf0f6;
+    --radius:10px;
+    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,
+           "Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none}
+
+  /* ── 상단 헤더 ── */
+  .topbar{
+    border-bottom:1px solid var(--line);
+    background:rgba(246,247,249,.85);
+    backdrop-filter:saturate(140%) blur(6px);
+    position:sticky;top:0;z-index:20;
+  }
+  .topbar-inner{
+    max-width:1080px;margin:0 auto;padding:18px 24px;
+    display:flex;align-items:center;gap:20px;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px;flex:0 0 auto}
+  .brand-mark{
+    font-family:var(--mono);font-size:13px;letter-spacing:.18em;
+    color:var(--accent);text-transform:uppercase;
+  }
+  .brand-title{font-size:20px;font-weight:700;letter-spacing:-.01em}
+  .search{flex:1;position:relative;max-width:420px;margin-left:auto}
+  .search input{
+    width:100%;padding:10px 14px 10px 38px;
+    border:1px solid var(--line);border-radius:999px;
+    background:var(--card);color:var(--ink);font:inherit;font-size:14px;
+    transition:border-color .15s,box-shadow .15s;
+  }
+  .search input:focus{
+    outline:none;border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-soft);
+  }
+  .search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);
+    width:16px;height:16px;stroke:var(--faint);fill:none;stroke-width:2}
+
+  /* ── 본문 레이아웃 ── */
+  .layout{max-width:1080px;margin:0 auto;padding:28px 24px 64px;
+    display:grid;grid-template-columns:248px 1fr;gap:40px}
+
+  /* ── 카테고리 트리 (좌측) ── */
+  .rail-title{
+    font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--faint);
+    padding:0 8px 10px;border-bottom:1px solid var(--line);margin-bottom:6px;
+  }
+  .tree{list-style:none;margin:0;padding:0;font-size:14px}
+  .tree ul{list-style:none;margin:0;padding-left:14px;
+    border-left:1px solid var(--line)}
+  .node-row{display:flex;align-items:center;gap:2px;border-radius:7px}
+  .node-row:hover{background:var(--accent-soft)}
+  .node-row.active{background:var(--accent-soft)}
+  .node-row.active > .node-label{color:var(--accent);font-weight:600}
+  .caret{
+    flex:0 0 auto;width:20px;height:28px;border:0;background:none;cursor:pointer;
+    color:var(--faint);display:flex;align-items:center;justify-content:center;
+    font-size:10px;transition:transform .15s}
+  .caret.spacer{cursor:default;visibility:hidden}
+  .caret.open{transform:rotate(90deg)}
+  .node-label{
+    flex:1;display:flex;justify-content:space-between;align-items:center;
+    gap:8px;padding:5px 8px 5px 0;cursor:pointer;color:var(--ink);min-width:0}
+  .node-label .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .node-label .cnt{font-family:var(--mono);font-size:11px;color:var(--faint);
+    flex:0 0 auto}
+  .reset-all{
+    display:block;width:100%;text-align:left;border:0;background:none;
+    font:inherit;font-size:14px;font-weight:600;color:var(--ink);
+    padding:6px 8px;border-radius:7px;cursor:pointer;margin-bottom:6px}
+  .reset-all:hover{background:var(--accent-soft)}
+  .reset-all.active{color:var(--accent);background:var(--accent-soft)}
+
+  /* ── 글 목록 (우측) ── */
+  .list-head{display:flex;align-items:baseline;justify-content:space-between;
+    gap:12px;margin-bottom:18px;flex-wrap:wrap}
+  .crumbs{font-size:14px;color:var(--muted);display:flex;align-items:center;
+    gap:6px;flex-wrap:wrap}
+  .crumbs b{color:var(--ink);font-weight:600}
+  .crumbs button{border:0;background:none;font:inherit;color:var(--accent);
+    cursor:pointer;padding:0}
+  .crumbs .sep{color:var(--faint)}
+  .result-count{font-family:var(--mono);font-size:12px;color:var(--faint);
+    flex:0 0 auto}
+
+  .post{display:block;background:var(--card);border:1px solid var(--line);
+    border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;
+    transition:border-color .15s,transform .15s,box-shadow .15s}
+  .post:hover{border-color:var(--accent);transform:translateY(-1px);
+    box-shadow:0 6px 20px -12px rgba(31,38,46,.4)}
+  .post:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .post-meta{display:flex;align-items:center;gap:10px;margin-bottom:7px;
+    font-size:12px;color:var(--faint);flex-wrap:wrap}
+  .post-cat{font-family:var(--mono);letter-spacing:.02em}
+  .post-cat .arrow{margin:0 4px;color:var(--line)}
+  .post-date{font-family:var(--mono)}
+  .post-title{font-size:18px;font-weight:700;letter-spacing:-.01em;
+    margin:0 0 6px}
+  .post-preview{font-size:14px;color:var(--muted);margin:0;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+    overflow:hidden}
+  mark{background:#fbe7a2;color:inherit;border-radius:2px;padding:0 1px}
+
+  .empty{text-align:center;padding:70px 20px;color:var(--muted)}
+  .empty h3{color:var(--ink);font-size:16px;margin:0 0 6px}
+
+  /* ── 페이지네이션 ── */
+  .pager{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
+    margin-top:26px}
+  .page-btn{min-width:36px;height:36px;padding:0 10px;border:1px solid var(--line);
+    background:var(--card);color:var(--ink);font:inherit;font-size:13px;
+    border-radius:8px;cursor:pointer;transition:border-color .15s,background .15s}
+  .page-btn:hover:not(:disabled){border-color:var(--accent)}
+  .page-btn.active{background:var(--accent);border-color:var(--accent);
+    color:#fff;font-weight:600}
+  .page-btn:disabled{opacity:.4;cursor:default}
+  .page-gap{display:flex;align-items:flex-end;padding:0 4px;color:var(--faint)}
+
+  /* ── 모바일 ── */
+  .rail-toggle{display:none}
+  @media(max-width:760px){
+    .layout{grid-template-columns:1fr;gap:20px;padding-top:18px}
+    .topbar-inner{flex-wrap:wrap;gap:12px}
+    .search{max-width:none;order:3;width:100%;margin-left:0}
+    .rail-toggle{display:flex;align-items:center;gap:8px;border:1px solid var(--line);
+      background:var(--card);border-radius:8px;padding:9px 12px;font:inherit;
+      font-size:14px;font-weight:600;cursor:pointer;width:100%}
+    .rail{display:none}
+    .rail.open{display:block;border:1px solid var(--line);border-radius:var(--radius);
+      padding:14px;background:var(--card);margin-top:10px}
+  }
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark">Notes</span>
+        <span class="brand-title">공부 노트</span>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+        <input id="q" type="search" placeholder="제목·내용·카테고리 검색" autocomplete="off">
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside>
+      <button class="rail-toggle" id="railToggle" aria-expanded="false">
+        카테고리 펼치기
+      </button>
+      <nav class="rail" id="rail" aria-label="카테고리">
+        <div class="rail-title">카테고리</div>
+        <button class="reset-all" id="resetAll">전체 글</button>
+        <ul class="tree" id="tree"></ul>
+      </nav>
+    </aside>
+
+    <section>
+      <div class="list-head">
+        <div class="crumbs" id="crumbs"></div>
+        <div class="result-count" id="count"></div>
+      </div>
+      <div id="list"></div>
+      <nav id="pager" class="pager" aria-label="페이지"></nav>
+    </section>
+  </main>
+
+<script>
+"use strict";
+
+const PAGE_SIZE = 12;   // 한 페이지에 보여줄 글 수
+const state = { posts: [], activeCats: [], query: "", page: 1 };
+
+const $list   = document.getElementById("list");
+const $tree   = document.getElementById("tree");
+const $crumbs = document.getElementById("crumbs");
+const $count  = document.getElementById("count");
+const $q      = document.getElementById("q");
+const $pager  = document.getElementById("pager");
+
+const nfc = s => (s || "").normalize("NFC");
+
+// ── 데이터 로드 ──
+fetch("index_data.json")
+  .then(r => { if(!r.ok) throw new Error(r.status); return r.json(); })
+  .then(data => {
+    // 혹시 NFD(자모분해)로 들어온 값이 있어도 NFC 로 맞춰 둔다
+    state.posts = (data.posts || []).map(p => ({
+      title: nfc(p.title),
+      categories: (p.categories || []).map(nfc),
+      url: nfc(p.url),
+      date: p.date,
+      preview: nfc(p.preview),
+    }));
+    buildTree();
+    render();
+  })
+  .catch(err => {
+    $list.innerHTML =
+      '<div class="empty"><h3>목록을 불러오지 못했습니다</h3>' +
+      '<p>index_data.json 이 index.html 과 같은 폴더(저장소 루트)에 있는지, ' +
+      '그리고 file:// 가 아니라 웹서버(예: GitHub Pages)에서 열고 있는지 확인하세요.</p></div>';
+    console.error(err);
+  });
+
+// ── 유틸 ──
+function fmtDate(iso){ return iso ? iso.replaceAll("-", ".") : ""; }
+function esc(s){ return s.replace(/[&<>"]/g, c =>
+  ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c])); }
+
+// 검색어 강조
+function highlight(text){
+  const q = state.query.trim();
+  if(!q) return esc(text);
+  const re = new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&") + ")","ig");
+  return esc(text).replace(re, "<mark>$1</mark>");
+}
+
+// ── 좌측 카테고리 트리 ──
+// posts 의 categories 배열들로 중첩 트리를 만든다.
+function buildTree(){
+  const root = {};
+  for(const p of state.posts){
+    let node = root;
+    for(const c of p.categories){
+      node[c] = node[c] || { __count:0, __children:{} };
+      node[c].__count++;
+      node = node[c].__children;
+    }
+  }
+  $tree.innerHTML = "";
+  $tree.appendChild(renderBranch(root, []));
+}
+
+function renderBranch(obj, path){
+  const frag = document.createDocumentFragment();
+  for(const name of Object.keys(obj).sort((a,b)=>a.localeCompare(b,"ko"))){
+    const entry = obj[name];
+    const here = path.concat(name);
+    const hasKids = Object.keys(entry.__children).length > 0;
+
+    const li = document.createElement("li");
+    const row = document.createElement("div");
+    row.className = "node-row";
+
+    const caret = document.createElement("button");
+    caret.className = "caret" + (hasKids ? "" : " spacer");
+    caret.textContent = "\u25B6";
+    caret.setAttribute("aria-label","하위 펼치기");
+
+    const label = document.createElement("div");
+    label.className = "node-label";
+    label.innerHTML = '<span class="name">'+esc(name)+'</span>' +
+                      '<span class="cnt">'+entry.__count+'</span>';
+    label.onclick = () => selectCategory(here);
+
+    row.appendChild(caret);
+    row.appendChild(label);
+    li.appendChild(row);
+    row.dataset.path = here.join("\u0000");
+
+    if(hasKids){
+      const ul = document.createElement("ul");
+      ul.appendChild(renderBranch(entry.__children, here));
+      ul.style.display = "none";          // ul 은 실제 요소라 style 사용 가능
+      li.appendChild(ul);
+      caret.onclick = (e) => {
+        e.stopPropagation();
+        const open = ul.style.display === "none";
+        ul.style.display = open ? "block" : "none";
+        caret.classList.toggle("open", open);
+      };
+    }
+    frag.appendChild(li);
+  }
+  return frag;
+}
+
+// ── 동작 ──
+function selectCategory(cats){
+  state.activeCats = cats;
+  state.page = 1;
+  render();
+  // 모바일에서 선택하면 카테고리 패널 접기
+  if(window.innerWidth <= 760) closeRail();
+}
+document.getElementById("resetAll").onclick = () => {
+  state.activeCats = []; state.page = 1; render(); };
+
+$q.addEventListener("input", () => {
+  state.query = $q.value; state.page = 1; render(); });
+
+// 모바일 토글
+const $rail = document.getElementById("rail");
+const $railToggle = document.getElementById("railToggle");
+function closeRail(){ $rail.classList.remove("open");
+  $railToggle.setAttribute("aria-expanded","false");
+  $railToggle.textContent = "카테고리 펼치기"; }
+$railToggle.onclick = () => {
+  const open = !$rail.classList.contains("open");
+  $rail.classList.toggle("open", open);
+  $railToggle.setAttribute("aria-expanded", String(open));
+  $railToggle.textContent = open ? "카테고리 접기" : "카테고리 펼치기";
+};
+
+// ── 필터 + 렌더 ──
+function startsWith(arr, prefix){
+  return prefix.every((v,i) => arr[i] === v);
+}
+
+function render(){
+  const q = state.query.trim().toLowerCase();
+  let posts = state.posts.filter(p => startsWith(p.categories, state.activeCats));
+  if(q){
+    posts = posts.filter(p =>
+      (p.title + " " + p.preview + " " + p.categories.join(" "))
+        .toLowerCase().includes(q));
+  }
+
+  // 트리 활성 표시
+  const key = state.activeCats.join("\u0000");
+  document.querySelectorAll(".node-row").forEach(r =>
+    r.classList.toggle("active", r.dataset.path === key && key !== ""));
+  document.getElementById("resetAll")
+    .classList.toggle("active", state.activeCats.length === 0);
+
+  renderCrumbs();
+  $count.textContent = posts.length + "개";
+
+  if(posts.length === 0){
+    $list.innerHTML = '<div class="empty"><h3>해당하는 글이 없습니다</h3>' +
+      '<p>검색어를 바꾸거나 위에서 전체 글을 눌러 보세요.</p></div>';
+    $pager.innerHTML = "";
+    return;
+  }
+
+  // 페이지 계산
+  const pages = Math.max(1, Math.ceil(posts.length / PAGE_SIZE));
+  if(state.page > pages) state.page = pages;
+  const start = (state.page - 1) * PAGE_SIZE;
+  const pageItems = posts.slice(start, start + PAGE_SIZE);
+
+  $list.innerHTML = pageItems.map(p => {
+    const cat = p.categories.map(esc).join('<span class="arrow">›</span>');
+    return '<a class="post" href="'+encodeURI(p.url)+'">' +
+      '<div class="post-meta">' +
+        '<span class="post-cat">'+cat+'</span>' +
+        '<span class="post-date">'+fmtDate(p.date)+'</span>' +
+      '</div>' +
+      '<h2 class="post-title">'+highlight(p.title)+'</h2>' +
+      '<p class="post-preview">'+highlight(p.preview)+'</p>' +
+    '</a>';
+  }).join("");
+
+  renderPager(pages);
+}
+
+// ── 페이지네이션 ──
+function gotoPage(n){
+  state.page = n;
+  render();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderPager(pages){
+  if(pages <= 1){ $pager.innerHTML = ""; return; }
+  const cur = state.page;
+  const btn = (label, n, opts={}) =>
+    '<button class="page-btn'+(opts.active?' active':'')+'"' +
+    (opts.disabled?' disabled':'') +
+    ' data-n="'+n+'">'+label+'</button>';
+
+  // 현재 페이지 주변 + 처음/끝만 노출 (… 로 생략)
+  const nums = [];
+  for(let i=1;i<=pages;i++){
+    if(i===1 || i===pages || Math.abs(i-cur)<=1) nums.push(i);
+    else if(nums[nums.length-1] !== "…") nums.push("…");
+  }
+
+  let html = btn("이전", cur-1, {disabled: cur===1});
+  html += nums.map(n => n==="…"
+    ? '<span class="page-gap">…</span>'
+    : btn(n, n, {active: n===cur})).join("");
+  html += btn("다음", cur+1, {disabled: cur===pages});
+
+  $pager.innerHTML = html;
+  $pager.querySelectorAll("button[data-n]").forEach(b => {
+    b.onclick = () => { if(!b.disabled) gotoPage(parseInt(b.dataset.n,10)); };
+  });
+}
+
+function renderCrumbs(){
+  if(state.activeCats.length === 0){
+    $crumbs.innerHTML = '<b>최신 글</b>';
+    return;
+  }
+  let html = '<button data-i="-1">전체</button>';
+  state.activeCats.forEach((c,i) => {
+    html += '<span class="sep">›</span>';
+    if(i === state.activeCats.length - 1) html += '<b>'+esc(c)+'</b>';
+    else html += '<button data-i="'+i+'">'+esc(c)+'</button>';
+  });
+  $crumbs.innerHTML = html;
+  $crumbs.querySelectorAll("button").forEach(btn => {
+    btn.onclick = () => {
+      const i = parseInt(btn.dataset.i, 10);
+      state.activeCats = i < 0 ? [] : state.activeCats.slice(0, i+1);
+      state.page = 1;
+      render();
+    };
+  });
+}
+</script>
+</body>
+</html>
